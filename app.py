@@ -1,14 +1,105 @@
-from flask import Flask, render_template
+import json, os
+from config import config
 
-app = Flask(__name__, static_url_path='/templates', static_folder='templates', instance_relative_config=True)
+from flask import Flask, render_template, request, jsonify
+from flask_login import LoginManager
+from flask_restful import Api
+
+from models.model import *
+from models.model_mongo import mongo
+
+
+def create_app(env):
+    print("ENV:", env)
+    app = Flask(__name__, static_url_path='/templates', static_folder='templates', instance_relative_config=True)
+    # app = Flask(__name__, instance_relative_config=True)
+    if not env:
+        env = 'development'
+    app.config.from_object(config[env])  # from ./config.py
+
+    # app.config[
+    #     'SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:sw137982@database-1.cjeimtpjlvpf.ap-northeast-1.rds.amazonaws.com/postgres'
+    # app.config[
+    #     "MONGO_URI"] = 'mongodb://admin:sw137982@localhost:29476/block_styles?authSource=admin&readPreference=primary&appname=MongoDB%20Compass&ssl=false'
+    # app.config['SECRET_KEY'] = "super secret"
+    register_extensions(app)
+
+    return app
+
+
+def register_extensions(app):
+    db.init_app(app)
+    # db = SQLAlchemy(app)
+    mongo.init_app(app)
+
+    '''REST api'''
+    from resources.user import Register, Login
+    from resources.styles import Styles
+
+    api = Api(app)
+    api.add_resource(Register, "/api/register")
+    api.add_resource(Login, "/api/login")
+    api.add_resource(Styles, "/api/styles")
+
+    '''登入需求'''
+    login_manager = LoginManager(app)
+
+    # login_manager.login_view = 'auth.login'  # 自動導引到登入頁面
+
+    @login_manager.user_loader  # 回傳登入物件資訊，供current_user使用
+    def load_user(user):
+        # user_obj = User.query.filter_by(user_id=user).first()
+        # return user_obj
+        return user
+
+
+app = create_app("production")
 
 
 @app.route('/')
 def hello():
+    # return render_template("dist/index.html")
+    return "The demo has moved to  <a href='http://ec2-54-178-101-206.ap-northeast-1.compute.amazonaws.com/' target='_blank'>AWS server</a>"
 
-    return render_template("dist/index.html")
+@app.route('/db_create')
+def db_create():
+    db.create_all()
+    return "Create all table!"
+
+
+@app.route('/db_drop')
+def db_drop():
+    db.drop_all()
+    return "Drop all table!"
+
+
+@app.route('/db_q_test')
+def db_q_test():
+    q = User.query.all()
+    result = {}
+    for qq in q:
+        result[qq.username] = qq.email
+
+    return result
+
+
+@app.route('/db_i_test', methods=["POST"])
+def db_i_test():
+    data = request.get_data()
+    data = json.loads(data)
+    print(data)
+
+    for account in data:
+        user = User(user_id=account['user_id'], username=account['user_id'], email=account['email'],
+                    account_source=account['account_source'])
+        db.session.add(user)
+
+    db.session.commit()
+
+    return jsonify(data)
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", debug=True)
+    # app = create_app(None)
 
+    app.run(host="0.0.0.0", debug=True)
