@@ -23,7 +23,10 @@ class File(db.Model):
     file_name = db.Column(db.String(80), unique=False, nullable=False)
     created_date = db.Column(db.DateTime, unique=False, nullable=False)
     update_date = db.Column(db.DateTime, unique=False, nullable=False)
+    delete_flag = db.Column(db.Boolean, unique=False, nullable=True)
+    delete_date = db.Column(db.DateTime, unique=False, nullable=True)
 
     def __repr__(self):
         return '<File %r>' % self.file_name
+
 
