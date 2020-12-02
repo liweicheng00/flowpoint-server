@@ -19,23 +19,17 @@ class DevelopmentConfig(Config):
 
 class TestingConfig(Config):
     ENV = 'production'
-    CLIENT_ID = "422430406019-4knnkh10lgpftp3a7hhi3cd17ljdnat2.apps.googleusercontent.com"
-
-    url = os.environ.get('DATABASE_URL')
-
-    SQLALCHEMY_DATABASE_URI = url
-    MONGO_URI = 'mongodb+srv://admin:ziQe2V5YdadTm1vy@flowpoint.ukamc.mongodb.net/flowpoint?retryWrites=true&w=majority'
+    CLIENT_ID = os.environ.get('CLIENT_ID')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+    MONGO_URI = os.environ.get('MONGO_URI')
     BUNDLE_ERRORS = True
 
 
 class ProductionConfig(Config):
     ENV = 'production'
-    CLIENT_ID = "422430406019-4knnkh10lgpftp3a7hhi3cd17ljdnat2.apps.googleusercontent.com"
-
-    url = os.environ.get('DATABASE_URL')
-
-    SQLALCHEMY_DATABASE_URI = url
-    MONGO_URI = 'mongodb+srv://admin:ziQe2V5YdadTm1vy@flowpoint.ukamc.mongodb.net/flowpoint?retryWrites=true&w=majority'
+    CLIENT_ID = os.environ.get('CLIENT_ID')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+    MONGO_URI = os.environ.get('MONGO_URI')
     BUNDLE_ERRORS = True
 
 
