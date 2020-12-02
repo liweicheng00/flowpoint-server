@@ -1,8 +1,7 @@
 # from flask_principal import identity_changed, AnonymousIdentity, Identity
-from pprint import pprint
 
 from flask import (
-    current_app, jsonify
+    current_app
 )
 from flask_login import login_user, current_user
 from flask_restful import Resource, reqparse
@@ -11,6 +10,7 @@ from google.oauth2 import id_token
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from models.model import db, User as User_model, File
+
 
 class Register(Resource):
     parser = reqparse.RequestParser()
@@ -22,52 +22,52 @@ class Register(Resource):
     parser.add_argument('pwd_confirm', required=True, help='pwd_confirm is required')
     parser.add_argument('old_pwd', required=False, help='pwd_confirm is required')
 
-    def get(self, name):
-        print('user get')
-        return [name]
-
-    def post(self):
-        arg = self.parser.parse_args()
-        msg = None
-        if not arg['pwd'] == arg['pwd_confirm']:
-            msg = 'Password is not the same.'
-        elif User_model.query.filter_by(username=arg['ID']).first() is not None:
-            msg = 'user_name {} is already registered.'.format(arg['ID'])
-
-        if msg is None:
-            new_client = User_model(username=arg['ID'], password=generate_password_hash(arg['pwd']), name=arg['name'])
-            db.add(new_client)
-            db.commit()
-            msg = 'register success'
-            return {"msg": msg}
-
-        return {
-            "msg": msg
-        }
-
-    def put(self):
-        arg = self.parser.parse_args()
-        user = User_model.query.filter_by(username=arg['ID']).first()
-        if user is not None:
-            if check_password_hash(user.password, arg.old_pwd):
-                if arg['pwd'] == arg['pwd_confirm']:
-                    user.password = generate_password_hash(arg['pwd'])
-                    db.add(user)
-                    db.commit()
-                    msg = 'revise success'
-                else:
-                    msg = "password not match."
-            else:
-                msg = 'Incorrect password.'
-
-        else:
-            msg = "no this user"
-        return {
-            'msg': msg
-        }
-
-    def delete(self):
-        pass
+    # def get(self, name):
+    #     print('user get')
+    #     return [name]
+    #
+    # def post(self):
+    #     arg = self.parser.parse_args()
+    #     msg = None
+    #     if not arg['pwd'] == arg['pwd_confirm']:
+    #         msg = 'Password is not the same.'
+    #     elif User_model.query.filter_by(username=arg['ID']).first() is not None:
+    #         msg = 'user_name {} is already registered.'.format(arg['ID'])
+    #
+    #     if msg is None:
+    #         new_client = User_model(username=arg['ID'], password=generate_password_hash(arg['pwd']), name=arg['name'])
+    #         db.add(new_client)
+    #         db.commit()
+    #         msg = 'register success'
+    #         return {"msg": msg}
+    #
+    #     return {
+    #         "msg": msg
+    #     }
+    #
+    # def put(self):
+    #     arg = self.parser.parse_args()
+    #     user = User_model.query.filter_by(username=arg['ID']).first()
+    #     if user is not None:
+    #         if check_password_hash(user.password, arg.old_pwd):
+    #             if arg['pwd'] == arg['pwd_confirm']:
+    #                 user.password = generate_password_hash(arg['pwd'])
+    #                 db.add(user)
+    #                 db.commit()
+    #                 msg = 'revise success'
+    #             else:
+    #                 msg = "password not match."
+    #         else:
+    #             msg = 'Incorrect password.'
+    #
+    #     else:
+    #         msg = "no this user"
+    #     return {
+    #         'msg': msg
+    #     }
+    #
+    # def delete(self):
+    #     pass
 
 
 class Login(Resource):
@@ -127,7 +127,9 @@ class Login(Resource):
                 files = File.query.filter_by(user_id=user_id).order_by(File.update_date.desc()).all()
                 files_name = []
                 for f in files:
-                    files_name.append(f.file_name)
+                    files_name.append(
+                        {"file_id": f.file_id, "file_name": f.file_name,
+                         "update_date": f.update_date.strftime('%Y-%m-%d %H:%M:%S')})
                 return {"username": user.username, "user_id": user.user_id, "files_name": files_name}
 
             else:
@@ -174,6 +176,7 @@ class Login(Resource):
             #                 }})
             msg = "Use google for login"
             return msg
+
 
 #
 #

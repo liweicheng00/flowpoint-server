@@ -12,7 +12,7 @@ from models.model_mongo import mongo
 class Files(Resource):
     parser = reqparse.RequestParser(bundle_errors=True)
     parser.add_argument('file_id', required=False, help='file_id is required', action="append")
-    parser.add_argument('user_id', required=False, help='user_id is required')
+    parser.add_argument('user_id', required=False, help='user_id is required', default="temp")
     parser.add_argument('file_name', required=False, help='file_name is required')
     parser.add_argument('data', required=False, help='data is required', type=dict)
     parser.add_argument('styles', required=False, help='styles is required', action="append")
@@ -35,17 +35,24 @@ class Files(Resource):
         # 3. get styles from MongoDB styles
         arg = self.parser.parse_args()
 
+        if not arg.user_id:
+            user_id = 'temp'
+
+        else:
+            user_id = arg.user_id
         is_allowed = File_model.query.filter(File_model.file_id.in_(arg.file_id),
-                                             File_model.user_id == arg.user_id).first()
+                                             File_model.user_id == user_id).first()
         if is_allowed:
             files = mongo.db.files
             result = files.find_one({"_id": ObjectId(is_allowed.file_id)})
             data = dumps(result, json_options=RELAXED_JSON_OPTIONS)
 
             styles = mongo.db.styles
-
-            s = styles.find({"name": {"$in": result['styles']}})
-            style = (dumps(s, json_options=RELAXED_JSON_OPTIONS))
+            if result['styles']:
+                s = styles.find({"name": {"$in": result['styles']}})
+                style = dumps(s, json_options=RELAXED_JSON_OPTIONS)
+            else:
+                style = dumps([], json_options=RELAXED_JSON_OPTIONS)
 
             return {"data": json.loads(data), "styles": json.loads(style)}
         else:
@@ -65,11 +72,10 @@ class Files(Resource):
             db.session.commit()
 
             try:
-                # file_id = files.insert_one(save_file).inserted_id
-                result = files.replace_one({'_id': ObjectId(arg.file_ud)}, {
+                result = files.update_one({'_id': ObjectId(arg.file_id[0])}, {
                     '$set': {"data": arg.data, "styles": arg.styles, "file_name": arg.file_name}})
             except Exception as e:
-                return "update file fail! {} {}".format(arg.file_name, str(e)), 400
+                return "update file fail! {}: {}".format(arg.file_name, str(e)), 400
             else:
                 return {"msg": "Update file: {}, _id: {}".format(",".join(arg.file_name), arg.file_id)}
 
@@ -82,15 +88,21 @@ class Files(Resource):
             }
             print(arg.file_name)
             try:
+                if not arg.user_id:
+                    user_id = 'temp'
+                else:
+                    user_id = arg.user_id
                 file_id = files.insert_one(save_file).inserted_id
-                f = File_model(user_id=arg.user_id, file_id=str(file_id), file_name=arg.file_name,
+                f = File_model(user_id=user_id, file_id=str(file_id), file_name=arg.file_name,
                                created_date=datetime.datetime.now(), update_date=datetime.datetime.now())
                 db.session.add(f)
                 db.session.commit()
             except Exception as e:
                 return "Saving file fail! {} {}".format(",".join(arg.file_name), str(e)), 400
             else:
-                return {"msg": "Saved file: {}, _id: {}".format(arg.file_name, file_id), "file_id": str(file_id)}
+                return {"msg": "Saved file: {}, _id: {}".format(arg.file_name, file_id),
+                        "file_info": {"file_id": f.file_id, "file_name": f.file_name,
+                                      "update_date": f.update_date.strftime('%Y-%m-%d %H:%M:%S')}}
 
     def delete(self):
         # delete files

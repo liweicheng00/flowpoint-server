@@ -18,7 +18,7 @@ class User(db.Model, UserMixin):
 
 class File(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.String(120), unique=True, nullable=False)
+    user_id = db.Column(db.String(120), unique=False, nullable=False)
     file_id = db.Column(db.String(120), unique=True, nullable=False)
     file_name = db.Column(db.String(80), unique=False, nullable=False)
     created_date = db.Column(db.DateTime, unique=False, nullable=False)
@@ -28,5 +28,17 @@ class File(db.Model):
 
     def __repr__(self):
         return '<File %r>' % self.file_name
+
+    def to_dict(self):
+        """將數據轉為字典"""
+        dictionary = self.__dict__
+        if "_sa_instance_state" in dictionary:
+            del dictionary["_sa_instance_state"]
+
+        # dictionary["created_date"] = dictionary["created_date"].strftime('%Y-%m-%d %H:%M:%S')
+        # dictionary["created_date"] = dictionary["created_date"].strftime('%Y-%m-%d %H:%M:%S')
+        # dictionary["created_date"] = dictionary["created_date"].strftime('%Y-%m-%d %H:%M:%S')
+
+        return dictionary
 
 
